@@ -57,4 +57,33 @@ def regrid_pr_historical(X):
     start = '1900-1-1'
     stop = '2005-12-31'
     return X(time=(start,stop)).regrid(the_grid,regridTool='regrid2')
+
+
+
+def regrid_pr_rcp85(X):
+    """ regrid CMIP5 pr to obs grid """
+    fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
+    the_grid = fobs("precip").getGrid()
+    fobs.close()
+    start = '2006-1-1'
+    stop = '2099-12-31'
+    return X(time=(start,stop)).regrid(the_grid,regridTool='regrid2')
+
+if __name__ == "__main__":
+    hist = regrid_pr_historical()
+    hist.id="pr"
+    f = cdms.open("ENSEMBLES/cmip5.MMA.historical.pr.nc","w")
+    f.write(hist)
+    f.close()
+
+    rcp85 = regrid_pr_rcp85orical()
+    rcp85.id="pr"
+    f = cdms.open("ENSEMBLES/cmip5.MMA.rcp85.pr.nc","w")
+    f.write(rcp85)
+    f.close()
+
     
+
+
+
+
