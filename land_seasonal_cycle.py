@@ -70,13 +70,15 @@ def regrid_pr_rcp85(X):
     return X(time=(start,stop)).regrid(the_grid,regridTool='regrid2')
 
 if __name__ == "__main__":
-    hist = regrid_pr_historical()
+    histdirec = "/work/cmip5/historical/atm/mo/pr/"
+    hist = cmip5.get_ensemble(histdirec,"pr",func=regrid_pr_historical)
     hist.id="pr"
     f = cdms.open("ENSEMBLES/cmip5.MMA.historical.pr.nc","w")
     f.write(hist)
     f.close()
 
-    rcp85 = regrid_pr_rcp85orical()
+    rcp85direc = "/work/cmip5/rcp85/atm/mo/pr/"
+    rcp85 = cmip5.get_ensemble(rcp85direc,"pr",func=regrid_pr_rcp85)
     rcp85.id="pr"
     f = cdms.open("ENSEMBLES/cmip5.MMA.rcp85.pr.nc","w")
     f.write(rcp85)
