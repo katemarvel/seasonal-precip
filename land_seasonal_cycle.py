@@ -73,14 +73,14 @@ if __name__ == "__main__":
     histdirec = "/work/cmip5/historical/atm/mo/pr/"
     hist = cmip5.get_ensemble(histdirec,"pr",func=regrid_pr_historical)
     hist.id="pr"
-    f = cdms.open("ENSEMBLES/cmip5.MMA.historical.pr.nc","w")
+    f = cdms.open("/kate/PR_ENSEMBLES/cmip5.MMA.historical.pr.nc","w")
     f.write(hist)
     f.close()
 
     rcp85direc = "/work/cmip5/rcp85/atm/mo/pr/"
     rcp85 = cmip5.get_ensemble(rcp85direc,"pr",func=regrid_pr_rcp85)
     rcp85.id="pr"
-    f = cdms.open("ENSEMBLES/cmip5.MMA.rcp85.pr.nc","w")
+    f = cdms.open("/kate/PR_ENSEMBLES/cmip5.MMA.rcp85.pr.nc","w")
     f.write(rcp85)
     f.close()
 
