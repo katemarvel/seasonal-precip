@@ -18,6 +18,10 @@ from eofs.cdms import Eof
 from eofs.multivariate.cdms import MultivariateEof
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+
+from Plotting import *
+import CMIP5_tools as cmip5
+
 ### Set classic Netcdf (ver 3)
 cdms.setNetcdfShuffleFlag(0)
 cdms.setNetcdfDeflateFlag(0)
