@@ -46,9 +46,10 @@ def get_corresponding_pr(fname):
             return difflib.get_close_matches(fname,possmats)[0]
 
 
-test = cmip5.get_datafiles("historical","tas")
+
 
 def Koeppen(fname):
+
     base = string.join(fname.split(".")[1:4],".")
     f = cdms.open(fname)
     tas = cdutil.ANNUALCYCLE.climatology(f("tas",time=('1979-1-1','2005-12-31')))-273.15 #convert from K to C
@@ -326,12 +327,25 @@ def Koeppen(fname):
     fpr.close()
     fland.close()
     fglac.close()
+    K = np.ma.masked_where(totmask[0],K)
     return K
     
     
-    
-    
+if __name__ == "__main__":
+    import pickle
+    fnames = np.array(cmip5.get_datafiles("historical","tas"))
+    r1=[x.find(".r1")>=0 for x in fnames]
+    d = {}
+    for fname in fnames[r1]:
+        base = string.join(fname.split(".")[1:4],".")
+        try:
+            d[base] = Koeppen(fname)
+        except:
+            d[base] = "ERROR"
 
+    with open("TEST_DATA/Koeppen.pkl","wb") as f:
+        pickle.dump(d,f)
+        
     
     
     
