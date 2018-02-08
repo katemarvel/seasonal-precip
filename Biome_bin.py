@@ -343,9 +343,9 @@ if __name__ == "__main__":
         except:
             d[base] = "ERROR"
 
-    with open("TEST_DATA/Koeppen.pkl","wb") as f:
-        pickle.dump(d,f)
-        
+    f = open("TEST_DATA/Koeppen.pkl","w")
+    pickle.dump(d,f)
+    f.close()    
     
     
     
