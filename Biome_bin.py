@@ -407,10 +407,32 @@ if __name__ == "__main__":
     f = open("TEST_DATA/Koeppen.pkl","w")
     pickle.dump(d,f)
     f.close()    
-    
-def plot_Koeppen(K,cmap=cm.viridis):
+def plot_data_over_biomes(K,A,cmap=cm.viridis,biomes = None,vmax=None,vmin=None):
+    """
+    A must be a 1d array with axis biomes
+    """
     X = MV.zeros(K.shape)
     X.setAxisList(K.axislist)
+    allbiomes = eval(A.getAxis(0).biomes)
+    if biomes is None:
+        biomes = allbiomes
+    
+    v = np.ma.max(np.abs(A))
+    if vmax is None:
+        vmax = v
+    if vmin is None:
+        vmin = -v
+    for biome in biomes:
+        bi = allbiomes.index(biome)
+        data = A[bi]
+        m=bmap(MV.masked_where(K!=biome,X+data),vmin=vmin,vmax=vmax,lon_0=0,projection="cyl",cmap=cmap)
+    m.drawcoastlines(color="gray")
+        
+def plot_Koeppen(K,cmap=cm.viridis):
+    
+    X = MV.zeros(K.shape)
+    X.setAxisList(K.axislist)
+    
     #get 
     climates = np.unique(K.compressed())
     #Get rid of 0 if it's there
@@ -437,12 +459,16 @@ def average_over_all_biomes(K,X):
     delattr(climax,"models")
     climax.id="biome"
     nkopp=len(climates)
-    nt = X.shape[0]
-    all_biomes = MV.zeros((nkopp,nt))
+    if 'time' in X.getAxisIds():
+        nt = X.shape[0]
+        all_biomes = MV.zeros((nkopp,nt))
+    else:
+        all_biomes = MV.zeros((nkopp))
     for i in range(nkopp):
         all_biomes[i] = average_over_biome(K,X,climates[i])
     all_biomes.setAxis(0,climax)
-    all_biomes.setAxis(1,X.getTime())
+    if 'time' in X.getAxisIds():
+        all_biomes.setAxis(1,X.getTime())
     return all_biomes
 
 def average_RP_all_biomes():
@@ -452,7 +478,10 @@ def average_RP_all_biomes():
     amp_biomes = average_over_all_biomes(amp)
     
         
-        
+def plot_by_biome(A,biome):
+    biomes = eval(A.getAxis(0).biomes)
+    i = biomes.index(biome)
+    time_plot(A[i])
     
     
     
