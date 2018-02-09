@@ -21,6 +21,7 @@ import matplotlib.cm as cm
 
 from Plotting import *
 import CMIP5_tools as cmip5
+import seasonal_cycle_utils as sc
 
 ### Set classic Netcdf (ver 3)
 cdms.setNetcdfShuffleFlag(0)
@@ -46,13 +47,10 @@ def get_corresponding_pr(fname):
             return difflib.get_close_matches(fname,possmats)[0]
 
 
-
-
-def Koeppen(fname):
-
-    base = string.join(fname.split(".")[1:4],".")
+def get_tas_and_precip_from_file(fname):
     f = cdms.open(fname)
     tas = cdutil.ANNUALCYCLE.climatology(f("tas",time=('1979-1-1','2005-12-31')))-273.15 #convert from K to C
+    
     fpr = cdms.open(get_corresponding_pr(fname))
     pr = cdutil.ANNUALCYCLE.climatology(fpr("pr",time=('1979-1-1','2005-12-31')))*(86400 * 30) #convert to mm
     
@@ -66,6 +64,64 @@ def Koeppen(fname):
     totmask =np.repeat(totmask.asma()[np.newaxis],12,axis=0)
     tasmask = MV.masked_where(totmask,tas)
     prmask = MV.masked_where(totmask,pr)
+
+    f.close()
+    fpr.close()
+    fland.close()
+    fglac.close()
+    return tasmask,prmask
+def get_obs_tas_and_precip(from_scratch=False):
+    if from_scratch:
+        fpr = cdms.open("OBS/gpcc.precip.mon.total.v7.nc")
+        pro = fpr("precip",time=("1981-1-1","2010-12-31"))
+        cdutil.setTimeBoundsMonthly(pro)
+        proa=cdutil.ANNUALCYCLE.climatology(pro)
+        f = cdms.open("OBS/air.mon.ltm.v401.nc")
+        taso = f("air")
+        f.close()
+        fpr.close()
+        tasoa=MV.masked_where(proa.mask,taso)
+        proa =MV.masked_where(tasoa.mask,proa)
+        proa.id="pr"
+        tasoa.id="tas"
+        fw = cdms.open("OBS/UDel_GPCC_climatologies_1981_2010.nc","w")
+        tasoa.setAxis(0,proa.getTime())
+        fw.write(tasoa)
+        fw.write(proa)
+        fw.close()
+        
+    
+    else:
+        fr = cdms.open("OBS/UDel_GPCC_climatologies_1981_2010.nc")
+        tasoa = fr("tas")
+        proa = fr("pr")
+        fr.close()
+    return tasoa,proa
+        
+def Koeppen(fname):
+    if fname == "obs":
+        tasmask,prmask = get_obs_tas_and_precip(from_scratch=False)
+    else:
+        tasmask,prmask = get_tas_and_precip_from_file(fname)
+    
+    totmask = tasmask.mask
+    land = tasmask[0] #just need this for shape
+    # f = cdms.open(fname)
+    # tas = cdutil.ANNUALCYCLE.climatology(f("tas",time=('1979-1-1','2005-12-31')))-273.15 #convert from K to C
+    
+    # fpr = cdms.open(get_corresponding_pr(fname))
+    # pr = cdutil.ANNUALCYCLE.climatology(fpr("pr",time=('1979-1-1','2005-12-31')))*(86400 * 30) #convert to mm
+    
+    # fland = cdms.open(cmip5.landfrac(fname))
+    # fglac = cdms.open(cmip5.glacierfrac(fname))
+    # land = fland("sftlf")
+    # glacier=fglac("sftgif")
+
+    # #mask ocean and ice sheets
+    # totmask = np.logical_or(land==0,glacier==100.)
+    # totmask =np.repeat(totmask.asma()[np.newaxis],12,axis=0)
+    # tasmask = MV.masked_where(totmask,tas)
+    # prmask = MV.masked_where(totmask,pr)
     
     #mean annual precip
     pr_ann = MV.average(prmask,axis=0)
@@ -90,7 +146,7 @@ def Koeppen(fname):
     Apr_Sep_index=np.arange(4,10)-1
     hasborealsummer = MV.average(tasmask.asma()[Apr_Sep_index],axis=0)>MV.average(tasmask.asma()[Oct_Mar_index],axis=0)
     hasaustralsummer = ~hasborealsummer
-    
+    #THIS IS BROKEN
     Pmax_boreal_summer = np.ma.max(prmask.asma()[Apr_Sep_index],axis=0)
     Pmax_austral_winter = Pmax_boreal_summer
 
@@ -162,15 +218,18 @@ def Koeppen(fname):
     pr_threshold[thresh2]=2*tas_ann.asma()[thresh2]+28
         
 
-    K = np.zeros(land.shape,dtype=np.string0)
+    K = np.zeros(land.shape,dtype=np.object)
     #A climates
     A = tas_cold>18
     #Tropical rain forest
     Af = np.logical_and(A,pr_dry>60)
     # Tropical monsoon
-    Am = np.logical_and(A,pr_dry >= 100 - (pr_ann_sum / 25))
+    notrainforest = np.logical_and(A,~Af)
+    Am = np.logical_and(notrainforest,pr_dry >= 100 - (pr_ann_sum / 25))
+    
     #Tropical savannah
-    Aw = np.logical_and(A,pr_dry< 100 - (pr_ann_sum / 25))
+    notrainforest = np.logical_and(A,~Af)
+    Aw = np.logical_and(notrainforest,pr_dry< 100 - (pr_ann_sum / 25))
     #K[A]="A"
     K[Af]="Af"
     K[Am]="Am"
@@ -323,11 +382,13 @@ def Koeppen(fname):
 
     K[ET]="ET"
     K[EF] = "EF"
-    f.close()
-    fpr.close()
-    fland.close()
-    fglac.close()
+    # f.close()
+    # fpr.close()
+    # fland.close()
+    # fglac.close()
     K = np.ma.masked_where(totmask[0],K)
+    #K.setAxisList(prmask.getAxisList()[1:])
+    K.axislist = prmask[0].getAxisList()
     return K
     
     
@@ -347,9 +408,55 @@ if __name__ == "__main__":
     pickle.dump(d,f)
     f.close()    
     
-    
-    
+def plot_Koeppen(K,cmap=cm.viridis):
+    X = MV.zeros(K.shape)
+    X.setAxisList(K.axislist)
+    #get 
+    climates = np.unique(K.compressed())
+    #Get rid of 0 if it's there
+    badones = np.where(np.array([type(x)!=type("") for x in climates]))[0]
+    climates = np.delete(climates,badones)
+    i=0
+    for climate in climates:
+        m=bmap(MV.masked_where(K!=climate,X+i),vmin=0,vmax=len(climates),lon_0=0,projection="cyl")
+        i+=1
 
+def average_over_biome(K,X,biome):
+    basicmask = K!=biome
+    biome_mask = sc.mask_data(X,basicmask)
+    return cdutil.averager(biome_mask,'xy')
+
+def average_over_all_biomes(K,X):
+    climates = np.unique(K.compressed())
+    #Get rid of 0 if it's there
+    badones = np.where(np.array([type(x)!=type("") for x in climates]))[0]
+    climates = np.delete(climates,badones)
+    climates = sorted(climates)
+    climax = cmip5.make_model_axis(climates)
+    climax.biomes = climax.models
+    delattr(climax,"models")
+    climax.id="biome"
+    nkopp=len(climates)
+    nt = X.shape[0]
+    all_biomes = MV.zeros((nkopp,nt))
+    for i in range(nkopp):
+        all_biomes[i] = average_over_biome(K,X,climates[i])
+    all_biomes.setAxis(0,climax)
+    all_biomes.setAxis(1,X.getTime())
+    return all_biomes
+
+def average_RP_all_biomes():
+    f = cdms.open("PROCESSED/gpcc_amp_phase.nc")
+    amp=f("amp")
+    phase = f("phase")
+    amp_biomes = average_over_all_biomes(amp)
+    
+        
+        
+    
+    
+    
+    
     
     
     
