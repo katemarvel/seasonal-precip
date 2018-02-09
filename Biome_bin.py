@@ -392,21 +392,22 @@ def Koeppen(fname):
     return K
     
     
-if __name__ == "__main__":
+def write_all_Koeppen():
     import pickle
     fnames = np.array(cmip5.get_datafiles("historical","tas"))
-    r1=[x.find(".r1")>=0 for x in fnames]
+    r1=[x.find(".r1i1p1")>=0 for x in fnames]
     d = {}
     for fname in fnames[r1]:
-        base = string.join(fname.split(".")[1:4],".")
         try:
-            d[base] = Koeppen(fname)
+            K = Koeppen(fname)
+            writefile = "MODEL_KOEPPEN/"+fname.split("/")[-1].replace("xml","pkl").replace("tas","Koeppen")
+            fw = open(writefile,"w")
+            
+            pickle.dump(K,fw)
+            fw.close()
         except:
-            d[base] = "ERROR"
-
-    f = open("TEST_DATA/Koeppen.pkl","w")
-    pickle.dump(d,f)
-    f.close()    
+            print fname+" BAD"
+        
 def plot_data_over_biomes(K,A,cmap=cm.viridis,biomes = None,vmax=None,vmin=None):
     """
     A must be a 1d array with axis biomes
@@ -471,13 +472,6 @@ def average_over_all_biomes(K,X):
         all_biomes.setAxis(1,X.getTime())
     return all_biomes
 
-def average_RP_all_biomes():
-    f = cdms.open("PROCESSED/gpcc_amp_phase.nc")
-    amp=f("amp")
-    phase = f("phase")
-    amp_biomes = average_over_all_biomes(amp)
-    
-        
 def plot_by_biome(A,biome):
     biomes = eval(A.getAxis(0).biomes)
     i = biomes.index(biome)
@@ -485,7 +479,14 @@ def plot_by_biome(A,biome):
     
     
     
-    
+def get_koeppen_classification(model):
+    candidates = glob.glob("MODEL_KOEPPEN/*")
+    i = np.where([x.find(model)>0 for x in candidates])[0][0]
+    f = open(candidates[i])
+    K = pickle.load(f)
+    f.close()
+    return K
+        
     
     
     
