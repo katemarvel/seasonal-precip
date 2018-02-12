@@ -38,7 +38,7 @@ b.write_all_Koeppen()
 def average_variable_over_biome(forcing,variable,realm="atm"):
     fnames = cmip5.get_datafiles(forcing,variable,realm=realm)
     writedirec = "/kate/biomes/"+forcing+"/"+variable+"/"
-    cmd = "mkdir -p writedirec"
+    cmd = "mkdir -p "+writedirec
     os.system(cmd)
     for fname in fnames:
         try:
