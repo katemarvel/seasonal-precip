@@ -7,6 +7,7 @@ import difflib
 import scipy.stats as stats
 global crunchy
 import socket
+import pickle
 if socket.gethostname().find("crunchy")>=0:
     crunchy = True
 else:
@@ -393,7 +394,7 @@ def Koeppen(fname):
     
     
 def write_all_Koeppen():
-    import pickle
+ 
     fnames = np.array(cmip5.get_datafiles("historical","tas"))
     r1=[x.find(".r1i1p1")>=0 for x in fnames]
     d = {}
@@ -402,7 +403,7 @@ def write_all_Koeppen():
             K = Koeppen(fname)
             writefile = "MODEL_KOEPPEN/"+fname.split("/")[-1].replace("xml","pkl").replace("tas","Koeppen")
             fw = open(writefile,"w")
-            
+            print fname
             pickle.dump(K,fw)
             fw.close()
         except:
