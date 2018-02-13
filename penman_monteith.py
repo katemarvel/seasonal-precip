@@ -1,27 +1,27 @@
 
 def penmont_vpd_SH(Ta,Rnet,q,press,u):
-"""
+    """
+    
+    Using the modified FAO Penman-Monteith approach, calculation reference
+    (potential) evapotranspiration. As part of this, also calculate the vapor
+    pressure deficit (VPD) and relative humidity RH.
+    
+    Inputs:
+    Ta      = temperature, degrees C
+    Rnet    = surface net radiation, W/m2
+    u       = wind speed at 2 meters, m/s
+    q       = specific humidity, kg/kg
+    press   = surface pressure, Pascals
 
- Using the modified FAO Penman-Monteith approach, calculation reference
- (potential) evapotranspiration. As part of this, also calculate the vapor
- pressure deficit (VPD) and relative humidity RH.
+    Outputs:
+    PET  = potential evapotranspiration (mm/day)       
+    VPD  = vapor presssure deficit (kPa)  
+    RH   = relative humidity, fraction
+
+    Written by Benjamin I. Cook and translated to Python by Kate Marvel
  
- Inputs:
-       Ta      = temperature, degrees C
-       Rnet    = surface net radiation, W/m2
-       u       = wind speed at 2 meters, m/s
-       q       = specific humidity, kg/kg
-       press   = surface pressure, Pascals
-
- Outputs:
-       PET  = potential evapotranspiration (mm/day)       
-       VPD  = vapor presssure deficit (kPa)  
-       RH   = relative humidity, fraction
-
- Written by Benjamin I. Cook and translated to Python by Kate Marvel
- 
- Based on:
-       Xu, C-Y., and V. P. Singh. "Cross comparison of empirical equations 
+    Based on:
+    Xu, C-Y., and V. P. Singh. "Cross comparison of empirical equations 
                for calculating potential evapotranspiration with data 
                from Switzerland." Water Resources Management,
                16.3 (2002): 197-219.
@@ -29,9 +29,9 @@ def penmont_vpd_SH(Ta,Rnet,q,press,u):
            FAO Document:
            http://www.fao.org/docrep/X0490E/x0490e00.htmContents
 
- For Tetens, both above and below zero:
+    For Tetens, both above and below zero:
        http://cires.colorado.edu/~voemel/vp.html
-"""
+    """
     # ground heat flux, set to zero (works fine on >monthly timescales, and is 
     # accurate if one calculates Rnet as SH+LH)
     gflux=0.
