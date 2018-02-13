@@ -37,7 +37,7 @@ def penmont_vpd_SH(Ta,Rnet,q,press,u):
     gflux=0.
 
     #Extrapolate wind speed from 10m to 2m (ADDED BY KATE)
-    u2 = u*(4.87/np.log(67.8*10.-5.42)
+    u2 = u*(4.87/np.log(67.8*10.-5.42))
     
 
     # Calculate the latent heat of vaporization (MJ kg-1)
