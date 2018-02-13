@@ -28,7 +28,7 @@ import seasonal_cycle_utils as sc
 cdms.setNetcdfShuffleFlag(0)
 cdms.setNetcdfDeflateFlag(0)
 cdms.setNetcdfDeflateLevelFlag(0)
-def version_num(fname):
+
 def penmont_vpd_SH(Ta,Rnet,q,press,u):
     """
     
