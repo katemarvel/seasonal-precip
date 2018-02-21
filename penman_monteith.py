@@ -37,7 +37,7 @@ def penmont_vpd_SH(Ta,Rnet,q,press,u):
     pressure deficit (VPD) and relative humidity RH.
     
     Inputs:
-    Ta      = temperature, degrees C
+    Ta      = temperature, degrees K
     Rnet    = surface net radiation, W/m2
     u       = wind speed at 2 meters, m/s
     q       = specific humidity, kg/kg
@@ -180,9 +180,20 @@ def PET_from_cmip(fname,temp_variable = "tas"):
     return PET,VPD,RH
 
         
-def plot_annual_cycle(PET,i,j):
+def all_annual_cycle(PET,i,j):
     nyears = PET.shape[0]/12
+    years = np.arange(140)+1
+    X,Y=np.meshgrid(years,years)
+    thing = plt.pcolor(X,Y,X,cmap=cm.RdYlBu)
+    thing.set_visible(False)
+    plt.colorbar(orientation="horizontal",label="Year")
     [plt.plot(PET.asma()[k*12:(k+1)*12,i,j],color=cm.RdYlBu(k/float(nyears))) for k in range(nyears)]
+    months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct", "Nov","Dec"]
+    plt.xticks(np.arange(12),months)
+    plt.xlim(0,11)
+    plt.ylim(np.min(PET[:,i,j]),np.max(PET[:,i,j]))
+
+
 
 def draw_on_map(test_vmap,i,j):
     m=bmap(test_vmap,lon_0=0,projection="cyl",cmap=cm.Purples)
@@ -193,8 +204,8 @@ def draw_on_map(test_vmap,i,j):
     
              
 if __name__ == "__main__":
-    fnames = np.array(cmip5.get_datafiles("historical","sfcWind"))
-    path="/kate/PET/historical/"
+    fnames = np.array(cmip5.get_datafiles("1pctCO2","sfcWind"))
+    path="/kate/PET/1pctCO2/"
     for fname in fnames:
         try:
             PET,VPD,RH =  PET_from_cmip(fname,temp_variable = "tas")
