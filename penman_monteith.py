@@ -62,19 +62,23 @@ def penmont_vpd_SH(Ta,Rnet,q,press,u):
     For Tetens, both above and below zero:
        http://cires.colorado.edu/~voemel/vp.html
     """
+
+    #Convert temperature to degrees C
+    Ta = Ta -273.15
+    
     # ground heat flux, set to zero (works fine on >monthly timescales, and is 
     # accurate if one calculates Rnet as SH+LH)
     gflux=0.
 
     #Extrapolate wind speed from 10m to 2m (ADDED BY KATE)
     u2 = u*(4.87/np.log(67.8*10.-5.42))
-    
+
 
     # Calculate the latent heat of vaporization (MJ kg-1)
     lambda_lv=2.501-(2.361e-3)*Ta
 
     # Calculate Saturation vapor pressure (kPa)
-    es=0.611*exp((17.27*Ta)/(Ta+237.3))  
+    es=0.611*np.exp((17.27*Ta)/(Ta+237.3))  
 
     # Convert specific humidity (kg/kg) to actual vapor pressure
     ea=(press*q)/0.6213 # Pascals
@@ -89,7 +93,7 @@ def penmont_vpd_SH(Ta,Rnet,q,press,u):
     #ea=es.*RH
 
     # Slope of the vapor pressure curve (kPa C-1)
-    delta_vpc=(4098*es)/((Ta+237.3)^2)
+    delta_vpc=(4098*es)/((Ta+237.3)**2)
 
     # Psychometric constant (kPa C-1)
     # 0.00163 is Cp (specific heat of moist air) divided by epsilon (0.622, 
@@ -112,15 +116,28 @@ def penmont_vpd_SH(Ta,Rnet,q,press,u):
 
 def PET_from_cmip(fname,temp_variable = "tas"):
 
-    #Ta      = temperature, degrees C = tas
+    #Ta      = temperature, degrees K = tas
     #   Rnet    = surface net radiation, W/m2 = (hfls+hfss)
     #  u       = wind speed at 2 meters, m/s = sfcWind (??)
     #   q       = specific humidity, kg/kg = huss
     #  press   = surface pressure, Pascals = ps
 
+    #Get land and ice masks
+    fland = cdms.open(cmip5.landfrac(fname))
+    fglac = cdms.open(cmip5.glacierfrac(fname))
+    land = fland("sftlf")
+    glacier=fglac("sftgif")
+
+    #mask ocean and ice sheets
+    totmask = np.logical_or(land==0,glacier==100.)
+    
     f_wind = cdms.open(fname)
     u = f_wind("sfcWind")
     f_wind.close()
+
+    nt = len(u.getTime())
+
+    totmask =np.repeat(totmask.asma()[np.newaxis],nt,axis=0)
     
     f_hfls =cdms.open(cmip5.get_corresponding_file(fname,"hfls"))
     hfls = f_hfls("hfls")
@@ -130,7 +147,7 @@ def PET_from_cmip(fname,temp_variable = "tas"):
     hfss = f_hfss("hfss")
     f_hfss.close()
 
-    R_net = hfss + hfls
+    Rnet = hfss + hfls
 
     f_ta =cdms.open(cmip5.get_corresponding_file(fname,temp_variable))
     Ta = f_ta(temp_variable)
@@ -145,13 +162,48 @@ def PET_from_cmip(fname,temp_variable = "tas"):
     f_ps.close()
 
     PET,VPD,RH = penmont_vpd_SH(Ta,Rnet,q,press,u)
+
+    PET = MV.masked_where(totmask,PET)
+    PET.setAxisList(u.getAxisList())
+    PET.id = "PET"
+
+    VPD = MV.masked_where(totmask,VPD)
+    VPD.setAxisList(u.getAxisList())
+    VPD.id = "VPD"
+
+    RH = MV.masked_where(totmask,RH)
+    RH.setAxisList(u.getAxisList())
+    RH.id = "RH"
+
+    
+    
     return PET,VPD,RH
 
-    
-    
+        
+def plot_annual_cycle(PET,i,j):
+    nyears = PET.shape[0]/12
+    [plt.plot(PET.asma()[k*12:(k+1)*12,i,j],color=cm.RdYlBu(k/float(nyears))) for k in range(nyears)]
+
+def draw_on_map(test_vmap,i,j):
+    m=bmap(test_vmap,lon_0=0,projection="cyl",cmap=cm.Purples)
+    lat = test_vmap.getLatitude()[i]
+    lon = test_vmap.getLongitude()[j]
+    m.drawparallels([lat])
+    m.drawmeridians([lon])
     
              
-
+if __name__ == "__main__":
+    fnames = np.array(cmip5.get_datafiles("historical","sfcWind"))
+    path="/kate/PET/historical/"
+    for fname in fnames:
+        try:
+            PET,VPD,RH =  PET_from_cmip(fname,temp_variable = "tas")
+            writefname = fname.split("/")[-1].replace("xml","nc").replace("sfcWind","PET")
+            fw = cdms.open(path+writefname,"w")
+            fw.write(PET)
+            fw.write(VPD)
+            fw.write(RH)
+        
 
 
 
