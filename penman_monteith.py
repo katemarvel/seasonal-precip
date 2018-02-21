@@ -203,7 +203,8 @@ if __name__ == "__main__":
             fw.write(PET)
             fw.write(VPD)
             fw.write(RH)
-        
+        except:
+            print "bad file: "+fname
 
 
 
