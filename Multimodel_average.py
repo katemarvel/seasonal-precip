@@ -31,9 +31,9 @@ import CMIP5_tools as cmip5
 cdms.setNetcdfShuffleFlag(0)
 cdms.setNetcdfDeflateFlag(0)
 cdms.setNetcdfDeflateLevelFlag(0)
+import pickle
 
-
-b.write_all_Koeppen()
+#b.write_all_Koeppen()
 
 def average_variable_over_biome(forcing,variable,realm="atm"):
     fnames = cmip5.get_datafiles(forcing,variable,realm=realm)
@@ -41,21 +41,21 @@ def average_variable_over_biome(forcing,variable,realm="atm"):
     cmd = "mkdir -p "+writedirec
     os.system(cmd)
     for fname in fnames:
-        try:
-            model = fname.split(".")[1]
-            K = b.get_koeppen_classification(model)
-            f = cdms.open(fnames)
-            X = f(variable)
-            
-            AV = average_over_all_biomes(K,X)
-            AV.id = variable
+        
+        model = fname.split(".")[1]
+        K = b.get_koeppen_classification(model)
+        f = cdms.open(fname)
+        X = f(variable)
+
+        AV = average_over_all_biomes(K,X)
+        AV.id = variable
     
-            writefname = fname.split("/")[-1].replace("xml","nc").replace(variable,"Koeppen")
-            fw = cdms.open(writedirec+writefname,"w")
-            fw.write(AV)
-            fw.close()
+        writefname = fname.split("/")[-1].replace("xml","nc").replace(variable,"Koeppen")
+        fw = cdms.open(writedirec+writefname,"w")
+        fw.write(AV)
+        fw.close()
     
-            f.close()
+        f.close()
         except:
             print "BAD: "+fname
 

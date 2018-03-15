@@ -32,19 +32,22 @@ import CMIP5_tools as cmip5
 
 def gpcp_land_mask():
     """Create a land mask from GPCC number of observations """
-    f = cdms.open("OBS/precip.mon.nobs.2.5x2.5.v7.nc")
+    f = cdms.open("../OBS/precip.mon.nobs.2.5x2.5.v7.nc")
     test = f("precip")
     nobs = MV.sum(test,axis=0) # Total # of observations
-    gpcp_land_mask = nobs[::-1] == 0 # Have to flip lat axis to be on same grid
-    return gpcp_land_mask
+    land_mask = nobs == 0 # Have to flip lat axis to be on same grid
+    return land_mask
 
 
-def landplot(data,vmin=None,vmax=None,cmap=cm.RdBu_r):
+def landplot(data,vmin=None,vmax=None,cmap=cm.BrBG,mask=False):
     """ Plot data on cyl projection with lon_0 = prime meridian"""
     if vmin is None:
         a = np.max(np.abs(data))
         vmin=-a
         vmax=a
+    if mask:
+        land_mask = gpcp_land_mask()
+        data = MV.masked_where(land_mask,data)
     m = bmap(data,projection="cyl",lon_0=0,vmin=vmin,vmax=vmax,cmap=cmap)
     return m
 
@@ -70,6 +73,7 @@ def regrid_pr_rcp85(X):
     return X(time=(start,stop)).regrid(the_grid,regridTool='regrid2')
 
 if __name__ == "__main__":
+
     histdirec = "/work/cmip5/historical/atm/mo/pr/"
     hist = cmip5.get_ensemble(histdirec,"pr",func=regrid_pr_historical)
     hist.id="pr"

@@ -47,14 +47,30 @@ def get_corresponding_pr(fname):
             possmats = glob.glob(fname.replace(vari,"pr").split("cmip5.")[0]+"*")
             return difflib.get_close_matches(fname,possmats)[0]
 
+def get_land_ice_mask(fname):
+    fland = cdms.open(cmip5.landfrac(fname))
+    fglac = cdms.open(cmip5.glacierfrac(fname))
+    land = fland("sftlf")
+    glacier=fglac("sftgif")
 
+    #mask ocean and ice sheets
+    totmask = np.logical_or(land==0,glacier==100.)
+   # totmask =np.repeat(totmask.asma()[np.newaxis],12,axis=0)
+   
+
+  
+    fland.close()
+    fglac.close()
+    return totmask
+
+    
 def get_tas_and_precip_from_file(fname):
     f = cdms.open(fname)
     tas = cdutil.ANNUALCYCLE.climatology(f("tas",time=('1979-1-1','2005-12-31')))-273.15 #convert from K to C
     
     fpr = cdms.open(get_corresponding_pr(fname))
     pr = cdutil.ANNUALCYCLE.climatology(fpr("pr",time=('1979-1-1','2005-12-31')))*(86400 * 30) #convert to mm
-    
+  
     fland = cdms.open(cmip5.landfrac(fname))
     fglac = cdms.open(cmip5.glacierfrac(fname))
     land = fland("sftlf")
@@ -441,8 +457,15 @@ def plot_Koeppen(K,cmap=cm.viridis):
     badones = np.where(np.array([type(x)!=type("") for x in climates]))[0]
     climates = np.delete(climates,badones)
     i=0
+    #legend
+    Xtest,Ytest = np.meshgrid(np.arange(len(climates)),np.arange(len(climates)))
+    test=plt.pcolor(Xtest,Ytest,Xtest,cmap=cmap)
+    cbar = plt.colorbar(ticks = np.arange(len(climates)))
+    cbar.ax.set_yticklabels(climates)
+    test.set_visible(False)
+
     for climate in climates:
-        m=bmap(MV.masked_where(K!=climate,X+i),vmin=0,vmax=len(climates),lon_0=0,projection="cyl")
+        m=bmap(MV.masked_where(K!=climate,X+i),vmin=0,vmax=len(climates),lon_0=0,projection="cyl",cmap=cmap)
         i+=1
 
 def average_over_biome(K,X,biome):
@@ -488,8 +511,38 @@ def get_koeppen_classification(model):
     f.close()
     return K
         
+def area_average_biome(fname):
+    #Get the appropriate grid
+    fland = cdms.open(cmip5.landfrac(fname))
+    landfrac = fland("sftlf")
+    fland.close()
+    f = open(fname)
+    K = pickle.load(f)
+    f.close()
+    climates = np.unique(K.compressed())
+    d={}
+    weights = cdutil.area_weights(landfrac)
+    for climate in climates:
+        d[climate]=float(MV.sum(MV.masked_where(K!=climate,landfrac*weights)))
+    return d
+
+def biome_histogram():
+    fnames = glob.glob("MODEL_KOEPPEN/*pkl")
+    d = area_average_biome(fnames[0])
+    big_d = {}
+    for key in d.keys():
+        big_d[key] = [d[key]]
+    for fname in fnames[1:]:
+        d = area_average_biome(fname)
+        for key in d.keys():
+            if key in big_d.keys():
+                big_d[key]+=[d[key]]
+            else:
+                big_d[key] = [d[key]]
+    return big_d
+            
     
-    
+
     
 
     

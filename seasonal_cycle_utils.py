@@ -455,7 +455,7 @@ def decade_fast_annual_cycle(X,debug=False,semiann=False,zonal_average=False,ret
 
 
 def mask_data(data,basicmask):
-    if type(basicmask) != type(np.ma.array([])):
+    if type(basicmask) != type(np.array([])):
         basicmask = basicmask.asma()
     dim = len(data.shape)
     if dim == 2:
