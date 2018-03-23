@@ -18,6 +18,9 @@ from eofs.cdms import Eof
 from eofs.multivariate.cdms import MultivariateEof
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+
+import CMIP5_tools as cmip5
+
 ### Set classic Netcdf (ver 3)
 cdms.setNetcdfShuffleFlag(0)
 cdms.setNetcdfDeflateFlag(0)
@@ -301,17 +304,20 @@ def correct_phase(P,reference = None):
 
 
 
-def phase_angle_form(obs,period=12):
+def phase_angle_form(obs,period=12,anom=False):
     mag,phase = get_cycle(obs,period = period)
+    themean = np.ma.average(obs)
+    if anom:
+        themean = 0
     ###TEST
-    mag=2*mag
-    return mag*np.cos(2*np.pi/period*np.arange(len(obs))+phase)
+   # mag=2*mag
+    return mag*np.cos(2*np.pi/period*np.arange(len(obs))+phase)+themean
 
 def var_expl_by_annual_cycle(obs,period = 12,detrend = True):
    # mag,phase = get_cycle(obs)
     if detrend:
         obs = signal.detrend(obs)
-    recon = phase_angle_form(obs,period=period)
+    recon = phase_angle_form(obs,period=period,anom=True)
     return np.corrcoef(recon,obs)[0,1]**2
 
 def variance_map(X,period = 12,detrend = True):
@@ -358,6 +364,9 @@ def fast_annual_cycle(X,debug=False,semiann=False,zonal_average=False):
     elif len(X.shape)==2:
         nt,nlat = X.shape
         has_models=False
+    elif len(X.shape)==1:
+        nt, = X.shape
+        has_models = False
     if zonal_average:
         if 'lon' in X.getAxisIds():
             X = cdutil.averager(X,axis='x')
@@ -539,3 +548,9 @@ def get_phase_anomalies(P,historical=True):
     PANOM.setAxisList(P.getAxisList())
     return MV.masked_where(np.isnan(PANOM),PANOM)
     
+def phase_to_month(P):
+    ## O is jan 1, 6 is july 1, 11 is dec 1
+    return cmip5.cdms_clone((12*(1-P/(2*np.pi))) %12,P)
+
+def phase_climatology(P):
+    return cmip5.cdms_clone(stats.circmean(P,low=-np.pi,high=np.pi,axis=0),P[0])

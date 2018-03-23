@@ -542,7 +542,31 @@ def biome_histogram():
     return big_d
             
     
-
     
 
+    
+def p_minus_pet_phase(P,PET,region):
+    petreg = cdutil.averager(PET(region),axis='xy')
+    preg = cdutil.averager(P(region),axis='xy')
+    Rpet,Ppet=sc.fast_annual_cycle(petreg)
+    Rp,Pp=sc.fast_annual_cycle(preg)
+    Pp_months = sc.phase_to_month(Pp)
+    Ppet_months = sc.phase_to_month(Ppet)
+    startpet = cmip5.start_time(PET)
+    stoppet = cmip5.stop_time(PET)
+    startpr = cmip5.start_time(P)
+    stoppr = cmip5.stop_time(P)
+
+    if cdtime.compare(startpet,startpr) >0:
+        start = startpet
+    else:
+        start = startpr
+    if cdtime.compare(stoppet,stoppr) >0:
+        stop = stoppr
+    else:
+        stop = stoppet
+    start = cdtime.comptime(start.year,start.month,1)
+    stop = cdtime.comptime(stop.year,stop.month,31)
+    df = cmip5.cdms_clone(Pp_months(time=(start,stop)) - Ppet_months(time=(start,stop)),Pp_months(time=(start,stop)))
+    return df
     
