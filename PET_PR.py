@@ -129,7 +129,7 @@ def phase_1pct(pet):
     
 import string
 if __name__ == "__main__":
-    for variable in ["pet","pr","evspsbl"]:
+    for variable in ["PET","pr","evspsbl"]:
         fname = "/kate/TEST_DATA/"+string.upper(variable)+"_ensemble.nc"
         f=cdms.open(fname)
         writename="/kate/TEST_DATA/"+string.upper(variable)+"_phase.nc"
