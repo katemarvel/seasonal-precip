@@ -124,10 +124,15 @@ def PET_from_cmip(fname,temp_variable = "tas"):
 
     #Get land and ice masks
     fland = cdms.open(cmip5.landfrac(fname))
-    fglac = cdms.open(cmip5.glacierfrac(fname))
     land = fland("sftlf")
-    glacier=fglac("sftgif")
-
+    fland.close()
+    try:
+        fglac = cdms.open(cmip5.glacierfrac(fname))
+    
+        glacier=fglac("sftgif")
+        fglac.close()
+    except:
+        glacier = MV.zeros(land.shape)
     #mask ocean and ice sheets
     totmask = np.logical_or(land==0,glacier==100.)
     
