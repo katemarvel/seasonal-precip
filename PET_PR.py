@@ -31,6 +31,7 @@ cdms.setNetcdfDeflateLevelFlag(0)
 
 
 def observations():
+
     # Read in PET and PR files
     #regridded PET
     f = cdms.open("OBS/cru_ts4.01.1901.2016.pet.dat.REGRID.nc")
@@ -108,8 +109,28 @@ def observations():
 
 
 
+def temperature_phase():
+    fpr = cdms.open("OBS/precip.mon.total.2.5x2.5.v7.nc")
+    pr = fpr["precip"]
+    the_grid = pr.getGrid()
+    ft = cdms.open("OBS/GHCN_CAMS_NOAA.mon.mean.nc")
+    temp=ft("air").regrid(the_grid,regridTool='regrid2')
+    ft.close()
+    fa = cdms.open("OBS/GHCN_CAMS_NOAA.mon.1981-2010.ltm.nc")
+    climatology=fa("air").regrid(the_grid,regridTool='regrid2')
+    fa.close()
+    fpr.close()
 
-
+    start = cmip5.start_time(temp)
+    if start.month is not 1:
+        start = cdtime.comptime(start.year+1,1,1)
+    stop = cmip5.stop_time(temp)
+    if stop.month is not 12:
+        stop=cdtime.comptime(stop.year-1,12,31)
+    temp=temp(time=(start,stop))
+    temp_year = temp.shape[0]/12
+    temp_ac = cmip5.cdms_clone(temp+np.repeat(climatology.asma(),temp_year,axis=0),temp)
+    return temp_ac
 
 
 def phase_1pct(pet):
@@ -128,7 +149,7 @@ def phase_1pct(pet):
     return Pmma
     
 import string
-if __name__ == "__main__":
+def phase_data_store():
     for variable in ["PET","pr","evspsbl"]:
         fname = "/kate/TEST_DATA/"+string.upper(variable)+"_ensemble.nc"
         f=cdms.open(fname)
@@ -138,3 +159,148 @@ if __name__ == "__main__":
         P = phase_1pct(X)
         fw.write(P)
         fw.close()
+
+def only_ESMS(fnames):
+    #ESMs from Swann et al Table S4 http://www.pnas.org/content/pnas/suppl/2016/08/25/1604581113.DCSupplemental/pnas.201604581SI.pdf
+    ESMs = ["bcc-csm1-1", "CanESM2", "CESM1-BGC", "GFDL-ESM2M","HadGEM2-ES", "IPSL-CM5A-LR","NorESM1-ME"]
+    only_ESMs=[]
+    for esm in ESMs:
+        I=np.where(np.array([x.find(esm+".")>=0 for x in fnames]))[0]
+        only_ESMs += np.array(fnames)[I].tolist()
+    return np.array(only_ESMs)
+
+def PETFUNC(X):
+    fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
+    the_grid = fobs("precip").getGrid()
+    Xt = X[:140*12]
+    Xr = Xt.regrid(the_grid,regridTool='regrid2')
+    fobs.close()
+    return Xr
+
+def get_P_and_E(experiment="1pctCO2"):
+    pr_fnames_all = np.array(cmip5.get_datafiles(experiment,"pr"))
+    pr_esm = only_ESMS(pr_fnames_all)
+    if experiment == "1pctCO2": #GFDL p1 increases CO2 only to doubling so get rid of it
+        i=np.where(np.array([x.find(".GFDL-ESM2M.1pctCO2.r1i1p1.")>=0 for x in pr_esm]))[0]
+        pr_esm=np.delete(pr_esm,i)
+    nmods = len(pr_esm)
+
+    fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
+    the_grid = fobs["precip"].getGrid()
+    nlat,nlon=the_grid.shape
+    fobs.close()
+    PR = MV.zeros((nmods,140*12,nlat,nlon))
+
+    for i in range(nmods):
+        f=cdms.open(pr_esm[i])
+        X = f("pr")
+        Xregrid=PETFUNC(X)
+        PR[i]=Xregrid
+    axes = [cmip5.make_model_axis(pr_esm)]+Xregrid.getAxisList()
+    PR.setAxisList(axes)
+    PR.id="pr"
+    
+
+    evspsbl_fnames_all = np.array(cmip5.get_datafiles(experiment,"evspsbl"))
+    evspsbl_esm = only_ESMS(evspsbl_fnames_all)
+    if experiment == "1pctCO2": #GFDL p1 increases CO2 only to doubling so get rid of it
+        i=np.where(np.array([x.find(".GFDL-ESM2M.1pctCO2.r1i1p1.")>=0 for x in evspsbl_esm]))[0]
+        evspsbl_esm=np.delete(evspsbl_esm,i)
+    nmods = len(evspsbl_esm)
+
+    fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
+    the_grid = fobs["precip"].getGrid()
+    nlat,nlon=the_grid.shape
+    fobs.close()
+    EVSPSBL = MV.zeros((nmods,140*12,nlat,nlon))
+
+    for i in range(nmods):
+        f=cdms.open(evspsbl_esm[i])
+        X = f("evspsbl")
+        EVSPSBL[i]=PETFUNC(X)
+    axes = [cmip5.make_model_axis(evspsbl_esm)]+Xregrid.getAxisList()
+    EVSPSBL.setAxisList(axes)
+    EVSPSBL.id="evspsbl"
+
+    fw = cdms.open("/kate/TEST_DATA/ESM_PR_EVSPSBL.nc","w")
+    fw.write(PR)
+    fw.write(EVSPSBL)
+    fw.close()
+    
+    
+
+def get_evap_variables(experiment="1pctCO2"):
+    evspsblveg_fnames_all = np.array(cmip5.get_datafiles(experiment,"evspsblveg",realm="land"))
+    evspsblveg_esm = only_ESMS(evspsblveg_fnames_all)
+    if experiment == "1pctCO2": #GFDL p1 increases CO2 only to doubling so get rid of it
+        i=np.where(np.array([x.find(".GFDL-ESM2M.1pctCO2.r1i1p1.")>=0 for x in evspsblveg_esm]))[0]
+        evspsblveg_esm=np.delete(evspsblveg_esm,i)
+    nmods = len(evspsblveg_esm)
+
+    fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
+    the_grid = fobs["evspsblvegecip"].getGrid()
+    nlat,nlon=the_grid.shape
+    fobs.close()
+    EVSPSBLVEG = MV.zeros((nmods,140*12,nlat,nlon))
+
+    for i in range(nmods):
+        f=cdms.open(evspsblveg_esm[i])
+        X = f("evspsblveg")
+        Xregrid=PETFUNC(X)
+        EVSPSBLVEG[i]=Xregrid
+    axes = [cmip5.make_model_axis(evspsblveg_esm)]+Xregrid.getAxisList()
+    EVSPSBLVEG.setAxisList(axes)
+    EVSPSBLVEG.id="evspsblveg"
+    
+
+    evspsblsoi_fnames_all = np.array(cmip5.get_datafiles(experiment,"evspsblsoi",realm="land"))
+    evspsblsoi_esm = only_ESMS(evspsblsoi_fnames_all)
+    if experiment == "1pctCO2": #GFDL p1 increases CO2 only to doubling so get rid of it
+        i=np.where(np.array([x.find(".GFDL-ESM2M.1pctCO2.r1i1p1.")>=0 for x in evspsblsoi_esm]))[0]
+        evspsblsoi_esm=np.delete(evspsblsoi_esm,i)
+    nmods = len(evspsblsoi_esm)
+
+    fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
+    the_grid = fobs["evspsblsoivegecip"].getGrid()
+    nlat,nlon=the_grid.shape
+    fobs.close()
+    EVSPSBLSOI = MV.zeros((nmods,140*12,nlat,nlon))
+
+    for i in range(nmods):
+        f=cdms.open(evspsblsoi_esm[i])
+        X = f("evspsblsoi")
+        EVSPSBLSOI[i]=PETFUNC(X)
+    axes = [cmip5.make_model_axis(evspsblsoi_esm)]+Xregrid.getAxisList()
+    EVSPSBLSOI.setAxisList(axes)
+    EVSPSBLSOI.id="evspsblsoi"
+
+    
+    tran_fnames_all = np.array(cmip5.get_datafiles(experiment,"tran",realm="land"))
+    tran_esm = only_ESMS(tran_fnames_all)
+    if experiment == "1pctCO2": #GFDL p1 increases CO2 only to doubling so get rid of it
+        i=np.where(np.array([x.find(".GFDL-ESM2M.1pctCO2.r1i1p1.")>=0 for x in tran_esm]))[0]
+        tran_esm=np.delete(tran_esm,i)
+    nmods = len(tran_esm)
+
+    fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
+    the_grid = fobs["tranvegecip"].getGrid()
+    nlat,nlon=the_grid.shape
+    fobs.close()
+    TRAN = MV.zeros((nmods,140*12,nlat,nlon))
+
+    for i in range(nmods):
+        f=cdms.open(tran_esm[i])
+        X = f("tran")
+        TRAN[i]=PETFUNC(X)
+    axes = [cmip5.make_model_axis(tran_esm)]+Xregrid.getAxisList()
+    TRAN.setAxisList(axes)
+    TRAN.id="tran"
+
+    fw = cdms.open("/kate/TEST_DATA/land_evap.nc","w")
+    fw.write(EVSPSBLVEG)
+    fw.write(EVSPSBLSOI)
+    fw.close()
+    
+            
+    
+
