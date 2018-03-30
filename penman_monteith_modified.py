@@ -120,6 +120,7 @@ def PET_from_cmip(fname,temp_variable = "tas"):
     #   Rnet    = surface net radiation, W/m2 = (hfls+hfss)
     #  u       = wind speed at 2 meters, m/s = sfcWind (??)
     #   q       = specific humidity, kg/kg = huss
+
     #  press   = surface pressure, Pascals = ps
 
     #Get land and ice masks
@@ -156,6 +157,8 @@ def PET_from_cmip(fname,temp_variable = "tas"):
     f_hfss.close()
 
     Rnet = hfss + hfls
+    
+        
 
     f_ta =cdms.open(cmip5.get_corresponding_file(fname,temp_variable))
     Ta = f_ta(temp_variable)
@@ -169,18 +172,22 @@ def PET_from_cmip(fname,temp_variable = "tas"):
     press = f_ps("ps")
     f_ps.close()
 
-    PET,VPD,RH = penmont_vpd_SH(Ta,Rnet,q,press,u)
+    corresponding_files = [cmip5.get_corresponding_file(fname,var) for var in ["hfss",temp_variable,"huss","ps","hfls"]]
+    L=cmip5.get_common_timeax(corresponding_files)
+    
+    
+    PET,VPD,RH = penmont_vpd_SH(Ta[:L],Rnet[:L],q[:L],press[:L],u[:L])
 
     PET = MV.masked_where(totmask,PET)
-    PET.setAxisList(u.getAxisList())
+    PET.setAxisList(Ta.getAxisList())
     PET.id = "PET"
 
     VPD = MV.masked_where(totmask,VPD)
-    VPD.setAxisList(u.getAxisList())
+    VPD.setAxisList(Ta.getAxisList())
     VPD.id = "VPD"
 
     RH = MV.masked_where(totmask,RH)
-    RH.setAxisList(u.getAxisList())
+    RH.setAxisList(Ta.getAxisList())
     RH.id = "RH"
 
     
