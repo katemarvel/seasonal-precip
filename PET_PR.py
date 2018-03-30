@@ -230,7 +230,7 @@ def get_P_and_E(experiment="1pctCO2"):
     
 
 def get_evap_variables(experiment="1pctCO2"):
-if 1:
+
     evspsblveg_fnames_all = np.array(cmip5.get_datafiles(experiment,"evspsblveg",realm="land"))
     evspsblveg_esm = only_ESMS(evspsblveg_fnames_all)
     if experiment == "1pctCO2": #GFDL p1 increases CO2 only to doubling so get rid of it
@@ -249,7 +249,7 @@ if 1:
         X = f("evspsblveg")
         Xregrid=PETFUNC(X)
         EVSPSBLVEG[i]=Xregrid
-    axes = [cmip5.make_model_axis(evspsblveg_esm)]+Xregrid.getAxisList()
+    axes = [cmip5.make_model_axis(evspsblveg_esm.tolist())]+Xregrid.getAxisList()
     EVSPSBLVEG.setAxisList(axes)
     EVSPSBLVEG.id="evspsblveg"
     
@@ -271,7 +271,7 @@ if 1:
         f=cdms.open(evspsblsoi_esm[i])
         X = f("evspsblsoi")
         EVSPSBLSOI[i]=PETFUNC(X)
-    axes = [cmip5.make_model_axis(evspsblsoi_esm)]+Xregrid.getAxisList()
+    axes = [cmip5.make_model_axis(evspsblsoi_esm.tolist())]+Xregrid.getAxisList()
     EVSPSBLSOI.setAxisList(axes)
     EVSPSBLSOI.id="evspsblsoi"
 
