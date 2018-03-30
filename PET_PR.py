@@ -230,6 +230,7 @@ def get_P_and_E(experiment="1pctCO2"):
     
 
 def get_evap_variables(experiment="1pctCO2"):
+if 1:
     evspsblveg_fnames_all = np.array(cmip5.get_datafiles(experiment,"evspsblveg",realm="land"))
     evspsblveg_esm = only_ESMS(evspsblveg_fnames_all)
     if experiment == "1pctCO2": #GFDL p1 increases CO2 only to doubling so get rid of it
@@ -238,7 +239,7 @@ def get_evap_variables(experiment="1pctCO2"):
     nmods = len(evspsblveg_esm)
 
     fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
-    the_grid = fobs["evspsblvegecip"].getGrid()
+    the_grid = fobs["precip"].getGrid()
     nlat,nlon=the_grid.shape
     fobs.close()
     EVSPSBLVEG = MV.zeros((nmods,140*12,nlat,nlon))
@@ -261,7 +262,7 @@ def get_evap_variables(experiment="1pctCO2"):
     nmods = len(evspsblsoi_esm)
 
     fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
-    the_grid = fobs["evspsblsoivegecip"].getGrid()
+    the_grid = fobs["precip"].getGrid()
     nlat,nlon=the_grid.shape
     fobs.close()
     EVSPSBLSOI = MV.zeros((nmods,140*12,nlat,nlon))
@@ -283,7 +284,7 @@ def get_evap_variables(experiment="1pctCO2"):
     nmods = len(tran_esm)
 
     fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
-    the_grid = fobs["tranvegecip"].getGrid()
+    the_grid = fobs["precip"].getGrid()
     nlat,nlon=the_grid.shape
     fobs.close()
     TRAN = MV.zeros((nmods,140*12,nlat,nlon))
@@ -299,6 +300,7 @@ def get_evap_variables(experiment="1pctCO2"):
     fw = cdms.open("/kate/TEST_DATA/land_evap.nc","w")
     fw.write(EVSPSBLVEG)
     fw.write(EVSPSBLSOI)
+    fw.write(TRAN)
     fw.close()
     
             
