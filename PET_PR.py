@@ -227,7 +227,58 @@ def get_P_and_E(experiment="1pctCO2"):
     fw.write(EVSPSBL)
     fw.close()
     
+def get_LAI_and_GPP(experiment="1pctCO2"):
+   
     
+
+    lai_fnames_all = np.array(cmip5.get_datafiles(experiment,"lai",realm="land")
+    lai_esm = only_ESMS(lai_fnames_all)
+    if experiment == "1pctCO2": #GFDL p1 increases CO2 only to doubling so get rid of it
+        i=np.where(np.array([x.find(".GFDL-ESM2M.1pctCO2.r1i1p1.")>=0 for x in lai_esm]))[0]
+        lai_esm=np.delete(lai_esm,i)
+    nmods = len(lai_esm)
+
+    fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
+    the_grid = fobs["precip"].getGrid()
+    nlat,nlon=the_grid.shape
+    fobs.close()
+    LAI = MV.zeros((nmods,140*12,nlat,nlon))
+
+    for i in range(nmods):
+        f=cdms.open(lai_esm[i])
+        X = f("lai")
+        LAI[i]=PETFUNC(X)
+    axes = [cmip5.make_model_axis(lai_esm)]+Xregrid.getAxisList()
+    LAI.setAxisList(axes)
+    LAI.id="lai"
+
+        
+
+    gpp_fnames_all = np.array(cmip5.get_datafiles(experiment,"gpp",realm="land")
+    gpp_esm = only_ESMS(gpp_fnames_all)
+    if experiment == "1pctCO2": #GFDL p1 increases CO2 only to doubling so get rid of it
+        i=np.where(np.array([x.find(".GFDL-ESM2M.1pctCO2.r1i1p1.")>=0 for x in gpp_esm]))[0]
+        gpp_esm=np.delete(gpp_esm,i)
+    nmods = len(gpp_esm)
+
+    fobs = cdms.open("/work/marvel1/SEASONAL/OBS/GPCP.precip.mon.mean.nc")
+    the_grid = fobs["precip"].getGrid()
+    nlat,nlon=the_grid.shape
+    fobs.close()
+    GPP = MV.zeros((nmods,140*12,nlat,nlon))
+
+    for i in range(nmods):
+        f=cdms.open(gpp_esm[i])
+        X = f("gpp")
+        GPP[i]=PETFUNC(X)
+    axes = [cmip5.make_model_axis(gpp_esm)]+Xregrid.getAxisList()
+    GPP.setAxisList(axes)
+    GPP.id="gpp"
+    
+    fw = cdms.open("/kate/TEST_DATA/ESM_LAI_GPP.nc","w")
+    fw.write(LAI)
+    fw.write(GPP)
+    fw.close()   
 
 def get_evap_variables(experiment="1pctCO2"):
 
