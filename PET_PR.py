@@ -278,7 +278,8 @@ def get_LAI_and_GPP(experiment="1pctCO2"):
     fw = cdms.open("/kate/TEST_DATA/ESM_LAI_GPP.nc","w")
     fw.write(LAI)
     fw.write(GPP)
-    fw.close()   
+    fw.close()
+    return LAI,GPP
 
 def get_evap_variables(experiment="1pctCO2"):
 
