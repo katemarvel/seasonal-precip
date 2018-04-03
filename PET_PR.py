@@ -247,7 +247,8 @@ def get_LAI_and_GPP(experiment="1pctCO2"):
     for i in range(nmods):
         f=cdms.open(lai_esm[i])
         X = f("lai")
-        LAI[i]=PETFUNC(X)
+        Xregrid = PETFUNC(X)
+        LAI[i]=Xregrid
     axes = [cmip5.make_model_axis(lai_esm)]+Xregrid.getAxisList()
     LAI.setAxisList(axes)
     LAI.id="lai"
