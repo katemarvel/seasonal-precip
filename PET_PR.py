@@ -231,7 +231,7 @@ def get_LAI_and_GPP(experiment="1pctCO2"):
    
     
 
-    lai_fnames_all = np.array(cmip5.get_datafiles(experiment,"lai",realm="land")
+    lai_fnames_all = np.array(cmip5.get_datafiles(experiment,"lai",realm="land"))
     lai_esm = only_ESMS(lai_fnames_all)
     if experiment == "1pctCO2": #GFDL p1 increases CO2 only to doubling so get rid of it
         i=np.where(np.array([x.find(".GFDL-ESM2M.1pctCO2.r1i1p1.")>=0 for x in lai_esm]))[0]
@@ -254,7 +254,7 @@ def get_LAI_and_GPP(experiment="1pctCO2"):
 
         
 
-    gpp_fnames_all = np.array(cmip5.get_datafiles(experiment,"gpp",realm="land")
+    gpp_fnames_all = np.array(cmip5.get_datafiles(experiment,"gpp",realm="land"))
     gpp_esm = only_ESMS(gpp_fnames_all)
     if experiment == "1pctCO2": #GFDL p1 increases CO2 only to doubling so get rid of it
         i=np.where(np.array([x.find(".GFDL-ESM2M.1pctCO2.r1i1p1.")>=0 for x in gpp_esm]))[0]
