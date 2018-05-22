@@ -39,16 +39,20 @@ def gpcp_land_mask():
     return land_mask
 
 
-def landplot(data,vmin=None,vmax=None,cmap=cm.BrBG,mask=False):
+def landplot(data,**kwargs):
     """ Plot data on cyl projection with lon_0 = prime meridian"""
-    if vmin is None:
+    if 'cmap' not in kwargs.keys():
+        cmap=cm.BrBG
+    if 'vmin' not in kwargs.keys():
         a = np.max(np.abs(data))
         vmin=-a
         vmax=a
+    if mask not in kwargs.keys():
+        mask=False
     if mask:
         land_mask = gpcp_land_mask()
         data = MV.masked_where(land_mask,data)
-    m = bmap(data,projection="cyl",lon_0=0,vmin=vmin,vmax=vmax,cmap=cmap)
+    m = bmap(data,projection="cyl",lon_0=0,vmin=vmin,vmax=vmax,cmap=cmap,**kwargs)
     return m
 
 

@@ -359,3 +359,15 @@ def get_evap_variables(experiment="1pctCO2"):
             
     
 
+def regions():
+    d={}
+    mex = cdutil.region.domain(latitude=(15,30),longitude=(360-80,360-115))
+    d["mex"]=mex
+    sasia = cdutil.region.domain(latitude=(10,25),longitude=(65,85))
+    d["sasia"]=sasia
+    med = cdutil.region.domain(latitude=(30,45),longitude=(-10,20))
+    d["med"]=med
+    europe = cdutil.region.domain(latitude=(40,60),longitude=(-10,10))
+    d["europe"]=europe
+    return d
+             
