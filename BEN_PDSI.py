@@ -21,7 +21,7 @@ import scipy.ndimage as ndimag
 import CMIP5_tools as cmip5
 import DA_tools as da
 from Plotting import *
-import merge_grid as merge
+
 
 ### Import plotting routines
 import matplotlib.pyplot as plt
