@@ -127,7 +127,7 @@ def PET_from_cmip(fname):
     #  press   = surface pressure, Pascals = ps
      """
     #Get land and ice masks
-if 1:
+
     temp_variable = fname.split(".")[-4]
     
     f_ta =cdms.open(fname)
