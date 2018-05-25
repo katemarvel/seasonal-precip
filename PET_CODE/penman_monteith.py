@@ -127,7 +127,7 @@ def PET_from_cmip(fname):
     #  press   = surface pressure, Pascals = ps
      """
     #Get land and ice masks
-
+if 1:
     temp_variable = fname.split(".")[-4]
     
     f_ta =cdms.open(fname)
@@ -153,10 +153,10 @@ def PET_from_cmip(fname):
     if cmip5.get_corresponding_file(fname,"sfcWind") is None:
         #if no surface wind is available, use NCEP reanalyis
         f_wind = cdms.open("wspd.mon.ltm.nc")
-        wspd = f("wspd")
+        wspd = f_wind("wspd")
         ny=nt/12
         u=np.repeat(wspd,ny,axis=0) #Repeat monthly climatologies
-        u.setAxisList([Ta.getTime()]+uspd.getAxisList()[1:])
+        u.setAxisList([Ta.getTime()]+wspd.getAxisList()[1:])
         u.id="sfcWind"
         f_wind.close()
     else:
@@ -194,9 +194,11 @@ def PET_from_cmip(fname):
 
     corresponding_files = [cmip5.get_corresponding_file(fname,var) for var in ["hfss",temp_variable,"huss","ps","hfls"]]
     L=cmip5.get_common_timeax(corresponding_files)
+    if type(L)==type(()):
+        PET,VPD,RH = penmont_vpd_SH(Ta(time=L),Rnet(time=L),q(time=L),press(time=L),u(time=L))
+    else:
     
-    
-    PET,VPD,RH = penmont_vpd_SH(Ta[:L],Rnet[:L],q[:L],press[:L],u[:L])
+        PET,VPD,RH = penmont_vpd_SH(Ta[:L],Rnet[:L],q[:L],press[:L],u[:L])
 
     PET = MV.masked_where(totmask,PET)
     PET.setAxisList(Ta.getAxisList())
@@ -256,7 +258,9 @@ def PET_experiment(experiment):
             print "bad file: "+fname
 
 
-
+if __name__ == "__main__":
+    for experiment in ["piControl","1pctCO2","historical","rcp85"]:
+        PET_experiment(experiment)
 
 
 
