@@ -125,8 +125,14 @@ def pad_by_10(X,year1,year2):
     """
     Pad an array at the beginning with an artificial 10 year spinup, in which each value is set to the climatology
     """
+    if type(year1)==type("string"):
+        year,month,day = year1.split("-")
+        year1=cdtime.comptime(int(year),int(month),int(day))
+    if type(year2)==type("string"):
+        year,month,day = year2.split("-")
+        year2=cdtime.comptime(int(year),int(month),int(day))
     tax = X.getTime()
-    lastten=[start.sub(x,cdtime.Months) for x in range(121)[1:]][::-1]
+    lastten=start.sub(x,cdtime.Months) for x in range(121)[1:]][::-1]
     dayax=np.array([x.torel(tax.units).value for x in lastten])
     tax_new = np.append(dayax,tax)
     new_time_axis=cdms.createAxis(tax_new)
