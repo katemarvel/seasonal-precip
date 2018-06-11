@@ -132,7 +132,7 @@ def pad_by_10(X,year1,year2):
         year,month,day = year2.split("-")
         year2=cdtime.comptime(int(year),int(month),int(day))
     tax = X.getTime()
-    lastten=[start.sub(x,cdtime.Months) for x in range(121)[1:]][::-1]
+    lastten=[year1.sub(x,cdtime.Months) for x in range(121)[1:]][::-1]
     dayax=np.array([x.torel(tax.units).value for x in lastten])
     tax_new = np.append(dayax,tax)
     new_time_axis=cdms.createAxis(tax_new)
