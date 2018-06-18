@@ -300,6 +300,8 @@ def calculate_Z(PET,P,WCTOP,WCBOT,year1,year2):
     Z.units = "mm"
     Z.info = "Created by Kate Marvel using calc_Z.py"
     Z.creation_date = datetime.datetime.now().isoformat()
+    Z.long_name = "Palmer Z index"
+    Z.standard_name="z_index"
     
     return Z
     
