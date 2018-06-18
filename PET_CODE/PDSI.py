@@ -59,12 +59,8 @@ def end_spell_P(U,Ze,nmonths,current_month,typ="wet"):
     
 
 
-def calc_PDSI(Z,BTthresh,calc_modified=True):
+def calc_PDSI(Z,BTthresh):
 
-    
-    
-    if calc_modified:
-        PMDI = Z*0.
     #Allocate space for effective wetness/dryness
 
     Ud = Z*0.
@@ -365,7 +361,7 @@ def calc_PDSI(Z,BTthresh,calc_modified=True):
             if s<s_orig:
                 F=np.arange(F[0],s_orig)
             #determine whether backtracking is occuring as the result of the initiation of a wet or dry spell
-            m= np.min(np.where(montho[s:s_orig,i,j]==1)[0])
+            m= np.min(np.where(montho[s:s_orig,lat,lon]==1)[0])
             if X[s+m-1,lat,lon]>0:
                 pon=0 #wet spell
             else:
