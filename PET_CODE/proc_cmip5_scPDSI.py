@@ -74,7 +74,7 @@ def calculate_all_Z(experiment,start_year,stop_year):
         fzw.write(Z)
         fzw.close()
 
-calculate_all_Z(historical,start_year,stop_year)
+calculate_all_Z("historical",start_year,stop_year)
 
     
 
