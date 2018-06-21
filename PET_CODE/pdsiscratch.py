@@ -1,78 +1,4 @@
-import glob
-import sys
-import cdms2 as cdms
-import numpy as np
-import MV2 as MV
-import difflib
-import scipy.stats as stats
-global crunchy
-import socket
-import datetime
-import ast
-
-if socket.gethostname().find("crunchy")>=0:
-    crunchy = True
-else:
-    crunchy = False
-
-
-import cdtime,cdutil,genutil
-import calendar
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-
-from Plotting import *
-import CMIP5_tools as cmip5
-
-
-### Set classic Netcdf (ver 3)
-cdms.setNetcdfShuffleFlag(0)
-cdms.setNetcdfDeflateFlag(0)
-cdms.setNetcdfDeflateLevelFlag(0)
-
-def all_idx(idx, axis):
-    """
-    For indexing a n dim array with an n-1 dim array
-    https://stackoverflow.com/questions/46103044/index-n-dimensional-array-with-n-1-d-array
-
-    """
-    grid = np.ogrid[tuple(map(slice, idx.shape))]
-    grid.insert(axis, idx)
-    return tuple(grid)
-
-def end_spell_P(U,Ze,nmonths,current_month,typ="wet"):
-    """
-    Calculate the probability that a dry/wet spell has ended
-    Ref: Eq (30), pg 29 Palmer 1965
-    
-    """
-    Uij=Ze*0
-    nmonthsi=nmonths.astype(np.int64)
-    if type(nmonthsi)==type(MV.array([])):
-        nmonthsi=nmonthsi.asma()
-    #U=MV.masked_where(np.abs(U)>1.e10,U)
-    if type(U)==type(MV.array([])):
-        U = U.asma()
-    Ut = U[:current_month+1][::-1] #flip to go back in time
-    CS = np.ma.cumsum(Ut,axis=0) #sum backwards in time. CS[0] = U[current_month]; CS[n] = U[current_month]+U[1 month_before]+ ... Ut[n months before]
-    
-                
-    #Uij=nmonths.choose(CS) #summation limit, different for each spatial point, is the first month of the current spell
-    Uij = CS[all_idx(nmonthsi,axis=0)]
-    if typ=="dry":
-        Uij=MV.where(Uij<0,0,Uij)
-    elif typ=="wet":
-        Uij=MV.where(Uij>0,0,Uij)
-    Q =Ze+Uij-U[current_month]
-    Pe = 100*Uij/Q
-   
-    return Pe
-    
-    
-
-
-def calc_PDSI(Z,BTthresh):
-
+if 1:
     #Allocate space for effective wetness/dryness
 
     Ud = Z*0.
@@ -105,8 +31,8 @@ def calc_PDSI(Z,BTthresh):
     X3[i]=X3i
 
    
-    for i in range(Z.shape[0])[1:10]: #Loop over time
-    
+    for i in range(Z.shape[0])[1:6]: #Loop over time
+    if 1:
         XX=Z[i]/3.
 
         nmonths = montho[i-1] #months so far in dry spell
@@ -439,50 +365,3 @@ def calc_PDSI(Z,BTthresh):
     PDSI=X
     PDSI.id="pdsi"
     PDSI.setAxisList(Z.getAxisList())
-
-    return PDSI
-
-    
-
-        
-            
-                    
-            
-                
-                            
-                    
-            
-            
-            
-            
-            
-            
-        
-         
-        
-        
-        
-        
-        
-
-
-        
-        
-
-        
-        
-        
-        
-                           
-        
-        
-        
-
-        
-        
-        
-
-        
-        
-        
-    
