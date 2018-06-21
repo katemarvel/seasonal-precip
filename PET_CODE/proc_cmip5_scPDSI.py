@@ -1,13 +1,39 @@
 #This is a modification of Ben's code.  It will apply Park's PET/PDSI code to generate monthly zindex and scPDSI calculations from model output on LLNL's crunchy
 #Import necessary modules
+import glob
+import sys
 import cdms2 as cdms
-import MV2 as MV
 import numpy as np
+import MV2 as MV
+import difflib
+import scipy.stats as stats
+global crunchy
+import socket
+import datetime
+import ast
+
+if socket.gethostname().find("crunchy")>=0:
+    crunchy = True
+else:
+    crunchy = False
+
+
 import cdtime,cdutil,genutil
 import calendar
-import glob
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+
+from Plotting import *
+import CMIP5_tools as cmip5
+
+
+### Set classic Netcdf (ver 3)
+cdms.setNetcdfShuffleFlag(0)
+cdms.setNetcdfDeflateFlag(0)
+cdms.setNetcdfDeflateLevelFlag(0)
 #import the PET code that I wrote
 import calc_Z as z
+
 
 
 def convert_to_mm(X):
